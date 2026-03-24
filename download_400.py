@@ -4,9 +4,17 @@ import os
 import re
 import json
 from tqdm import tqdm
-
+import os
+from dotenv import load_dotenv
 # --- 配置区 ---
-API_KEY = '7GXKBNFEIUZ18APJ56BY932EVIVMNK7X2Z'
+# 加载 .env 文件中的环境变量
+load_dotenv()
+
+# 从环境变量中读取 API_KEY
+API_KEY = os.getenv('API_KEY')
+# 加个检查，防止没读到 Key 报错
+if not API_KEY:
+    raise ValueError("未找到 API_KEY，请确保 .env 文件存在且配置正确！")
 ADDRESS_FILE = 'addresses.txt'
 SAVE_DIR = 'contracts'
 

@@ -1,33 +1,1034 @@
-{{
-  "language": "Solidity",
-  "settings": {
-    "evmVersion": "istanbul",
-    "libraries": {},
-    "metadata": {
-      "bytecodeHash": "ipfs",
-      "useLiteralContent": true
-    },
-    "optimizer": {
-      "enabled": true,
-      "runs": 100
-    },
-    "remappings": [],
-    "outputSelection": {
-      "*": {
-        "*": [
-          "evm.bytecode",
-          "evm.deployedBytecode",
-          "devdoc",
-          "userdoc",
-          "metadata",
-          "abi"
-        ]
-      }
-    }
-  },
-  "sources": {
-    "contracts/tokens/Ondo.sol": {
-      "content": "// SPDX-License-Identifier: AGPL-3.0\npragma solidity 0.8.3;\n\n/*\n * @dev Provides information about the current execution context, including the\n * sender of the transaction and its data. While these are generally available\n * via msg.sender and msg.data, they should not be accessed in such a direct\n * manner, since when dealing with meta-transactions the account sending and\n * paying for execution may not be the actual sender (as far as an application\n * is concerned).\n *\n * This contract is only required for intermediate, library-like contracts.\n */\nabstract contract Context {\n  function _msgSender() internal view virtual returns (address) {\n    return msg.sender;\n  }\n\n  function _msgData() internal view virtual returns (bytes calldata) {\n    this; // silence state mutability warning without generating bytecode - see https://github.com/ethereum/solidity/issues/2691\n    return msg.data;\n  }\n}\n\n/**\n * @dev Interface of the ERC165 standard, as defined in the\n * https://eips.ethereum.org/EIPS/eip-165[EIP].\n *\n * Implementers can declare support of contract interfaces, which can then be\n * queried by others ({ERC165Checker}).\n *\n * For an implementation, see {ERC165}.\n */\ninterface IERC165 {\n  /**\n   * @dev Returns true if this contract implements the interface defined by\n   * `interfaceId`. See the corresponding\n   * https://eips.ethereum.org/EIPS/eip-165#how-interfaces-are-identified[EIP section]\n   * to learn more about how these ids are created.\n   *\n   * This function call must use less than 30 000 gas.\n   */\n  function supportsInterface(bytes4 interfaceId) external view returns (bool);\n}\n\n/**\n * @dev Implementation of the {IERC165} interface.\n *\n * Contracts that want to implement ERC165 should inherit from this contract and override {supportsInterface} to check\n * for the additional interface id that will be supported. For example:\n *\n * ```solidity\n * function supportsInterface(bytes4 interfaceId) public view virtual override returns (bool) {\n *     return interfaceId == type(MyInterface).interfaceId || super.supportsInterface(interfaceId);\n * }\n * ```\n *\n * Alternatively, {ERC165Storage} provides an easier to use but more expensive implementation.\n */\nabstract contract ERC165 is IERC165 {\n  /**\n   * @dev See {IERC165-supportsInterface}.\n   */\n  function supportsInterface(bytes4 interfaceId)\n    public\n    view\n    virtual\n    override\n    returns (bool)\n  {\n    return interfaceId == type(IERC165).interfaceId;\n  }\n}\n\n/**\n * @dev External interface of AccessControl declared to support ERC165 detection.\n */\ninterface IAccessControl {\n  function hasRole(bytes32 role, address account) external view returns (bool);\n\n  function getRoleAdmin(bytes32 role) external view returns (bytes32);\n\n  function grantRole(bytes32 role, address account) external;\n\n  function revokeRole(bytes32 role, address account) external;\n\n  function renounceRole(bytes32 role, address account) external;\n}\n\n/**\n * @dev Contract module that allows children to implement role-based access\n * control mechanisms. This is a lightweight version that doesn't allow enumerating role\n * members except through off-chain means by accessing the contract event logs. Some\n * applications may benefit from on-chain enumerability, for those cases see\n * {AccessControlEnumerable}.\n *\n * Roles are referred to by their `bytes32` identifier. These should be exposed\n * in the external API and be unique. The best way to achieve this is by\n * using `public constant` hash digests:\n *\n * ```\n * bytes32 public constant MY_ROLE = keccak256(\"MY_ROLE\");\n * ```\n *\n * Roles can be used to represent a set of permissions. To restrict access to a\n * function call, use {hasRole}:\n *\n * ```\n * function foo() public {\n *     require(hasRole(MY_ROLE, msg.sender));\n *     ...\n * }\n * ```\n *\n * Roles can be granted and revoked dynamically via the {grantRole} and\n * {revokeRole} functions. Each role has an associated admin role, and only\n * accounts that have a role's admin role can call {grantRole} and {revokeRole}.\n *\n * By default, the admin role for all roles is `DEFAULT_ADMIN_ROLE`, which means\n * that only accounts with this role will be able to grant or revoke other\n * roles. More complex role relationships can be created by using\n * {_setRoleAdmin}.\n *\n * WARNING: The `DEFAULT_ADMIN_ROLE` is also its own admin: it has permission to\n * grant and revoke this role. Extra precautions should be taken to secure\n * accounts that have been granted it.\n */\nabstract contract AccessControl is Context, IAccessControl, ERC165 {\n  struct RoleData {\n    mapping(address => bool) members;\n    bytes32 adminRole;\n  }\n\n  mapping(bytes32 => RoleData) private _roles;\n\n  bytes32 public constant DEFAULT_ADMIN_ROLE = 0x00;\n\n  /**\n   * @dev Emitted when `newAdminRole` is set as ``role``'s admin role, replacing `previousAdminRole`\n   *\n   * `DEFAULT_ADMIN_ROLE` is the starting admin for all roles, despite\n   * {RoleAdminChanged} not being emitted signaling this.\n   *\n   * _Available since v3.1._\n   */\n  event RoleAdminChanged(\n    bytes32 indexed role,\n    bytes32 indexed previousAdminRole,\n    bytes32 indexed newAdminRole\n  );\n\n  /**\n   * @dev Emitted when `account` is granted `role`.\n   *\n   * `sender` is the account that originated the contract call, an admin role\n   * bearer except when using {_setupRole}.\n   */\n  event RoleGranted(\n    bytes32 indexed role,\n    address indexed account,\n    address indexed sender\n  );\n\n  /**\n   * @dev Emitted when `account` is revoked `role`.\n   *\n   * `sender` is the account that originated the contract call:\n   *   - if using `revokeRole`, it is the admin role bearer\n   *   - if using `renounceRole`, it is the role bearer (i.e. `account`)\n   */\n  event RoleRevoked(\n    bytes32 indexed role,\n    address indexed account,\n    address indexed sender\n  );\n\n  /**\n   * @dev See {IERC165-supportsInterface}.\n   */\n  function supportsInterface(bytes4 interfaceId)\n    public\n    view\n    virtual\n    override\n    returns (bool)\n  {\n    return\n      interfaceId == type(IAccessControl).interfaceId ||\n      super.supportsInterface(interfaceId);\n  }\n\n  /**\n   * @dev Returns `true` if `account` has been granted `role`.\n   */\n  function hasRole(bytes32 role, address account)\n    public\n    view\n    override\n    returns (bool)\n  {\n    return _roles[role].members[account];\n  }\n\n  /**\n   * @dev Returns the admin role that controls `role`. See {grantRole} and\n   * {revokeRole}.\n   *\n   * To change a role's admin, use {_setRoleAdmin}.\n   */\n  function getRoleAdmin(bytes32 role) public view override returns (bytes32) {\n    return _roles[role].adminRole;\n  }\n\n  /**\n   * @dev Grants `role` to `account`.\n   *\n   * If `account` had not been already granted `role`, emits a {RoleGranted}\n   * event.\n   *\n   * Requirements:\n   *\n   * - the caller must have ``role``'s admin role.\n   */\n  function grantRole(bytes32 role, address account) public virtual override {\n    require(\n      hasRole(getRoleAdmin(role), _msgSender()),\n      \"AccessControl: sender must be an admin to grant\"\n    );\n\n    _grantRole(role, account);\n  }\n\n  /**\n   * @dev Revokes `role` from `account`.\n   *\n   * If `account` had been granted `role`, emits a {RoleRevoked} event.\n   *\n   * Requirements:\n   *\n   * - the caller must have ``role``'s admin role.\n   */\n  function revokeRole(bytes32 role, address account) public virtual override {\n    require(\n      hasRole(getRoleAdmin(role), _msgSender()),\n      \"AccessControl: sender must be an admin to revoke\"\n    );\n\n    _revokeRole(role, account);\n  }\n\n  /**\n   * @dev Revokes `role` from the calling account.\n   *\n   * Roles are often managed via {grantRole} and {revokeRole}: this function's\n   * purpose is to provide a mechanism for accounts to lose their privileges\n   * if they are compromised (such as when a trusted device is misplaced).\n   *\n   * If the calling account had been granted `role`, emits a {RoleRevoked}\n   * event.\n   *\n   * Requirements:\n   *\n   * - the caller must be `account`.\n   */\n  function renounceRole(bytes32 role, address account) public virtual override {\n    require(\n      account == _msgSender(),\n      \"AccessControl: can only renounce roles for self\"\n    );\n\n    _revokeRole(role, account);\n  }\n\n  /**\n   * @dev Grants `role` to `account`.\n   *\n   * If `account` had not been already granted `role`, emits a {RoleGranted}\n   * event. Note that unlike {grantRole}, this function doesn't perform any\n   * checks on the calling account.\n   *\n   * [WARNING]\n   * ====\n   * This function should only be called from the constructor when setting\n   * up the initial roles for the system.\n   *\n   * Using this function in any other way is effectively circumventing the admin\n   * system imposed by {AccessControl}.\n   * ====\n   */\n  function _setupRole(bytes32 role, address account) internal virtual {\n    _grantRole(role, account);\n  }\n\n  /**\n   * @dev Sets `adminRole` as ``role``'s admin role.\n   *\n   * Emits a {RoleAdminChanged} event.\n   */\n  function _setRoleAdmin(bytes32 role, bytes32 adminRole) internal virtual {\n    emit RoleAdminChanged(role, getRoleAdmin(role), adminRole);\n    _roles[role].adminRole = adminRole;\n  }\n\n  function _grantRole(bytes32 role, address account) private {\n    if (!hasRole(role, account)) {\n      _roles[role].members[account] = true;\n      emit RoleGranted(role, account, _msgSender());\n    }\n  }\n\n  function _revokeRole(bytes32 role, address account) private {\n    if (hasRole(role, account)) {\n      _roles[role].members[account] = false;\n      emit RoleRevoked(role, account, _msgSender());\n    }\n  }\n}\n\ninterface IOndo {\n  enum InvestorType {CoinlistTranche1, CoinlistTranche2, SeedTranche}\n\n  // ----------- State changing api -----------\n\n  /// @notice Called by timelock contract to initialize locked balance of coinlist/seed investor\n  function updateTrancheBalance(\n    address beneficiary,\n    uint256 rawAmount,\n    InvestorType tranche\n  ) external;\n\n  // ----------- Getters -----------\n\n  /// @notice Gets the TOTAL amount of Ondo available for an address\n  function getFreedBalance(address account) external view returns (uint96);\n\n  /// @notice Gets the initial locked balance and unlocked Ondo for an address\n  function getVestedBalance(address account)\n    external\n    view\n    returns (uint96, uint96);\n}\n\nabstract contract LinearTimelock {\n  struct InvestorParam {\n    IOndo.InvestorType investorType;\n    uint96 initialBalance;\n  }\n\n  /// @notice the timestamp at which releasing is allowed\n  uint256 public cliffTimestamp;\n  /// @notice the linear vesting period for the first tranche\n  uint256 public immutable tranche1VestingPeriod;\n  /// @notice the linear vesting period for the second tranche\n  uint256 public immutable tranche2VestingPeriod;\n  /// @notice the linear vesting period for the Seed/Series A Tranche\n  uint256 public immutable seedVestingPeriod;\n  /// @dev mapping of balances for each investor\n  mapping(address => InvestorParam) internal investorBalances;\n  /// @notice role that allows updating of tranche balances - granted to Merkle airdrop contract\n  bytes32 public constant TIMELOCK_UPDATE_ROLE =\n    keccak256(\"TIMELOCK_UPDATE_ROLE\");\n\n  constructor(\n    uint256 _cliffTimestamp,\n    uint256 _tranche1VestingPeriod,\n    uint256 _tranche2VestingPeriod,\n    uint256 _seedVestingPeriod\n  ) {\n    cliffTimestamp = _cliffTimestamp;\n    tranche1VestingPeriod = _tranche1VestingPeriod;\n    tranche2VestingPeriod = _tranche2VestingPeriod;\n    seedVestingPeriod = _seedVestingPeriod;\n  }\n\n  function passedCliff() public view returns (bool) {\n    return block.timestamp > cliffTimestamp;\n  }\n\n  /// @dev the seedVestingPeriod is the longest vesting period\n  function passedAllVestingPeriods() public view returns (bool) {\n    return block.timestamp > cliffTimestamp + seedVestingPeriod;\n  }\n\n  /**\n    @notice View function to get the user's initial balance and current amount of freed balance\n   */\n  function getVestedBalance(address account)\n    external\n    view\n    returns (uint256, uint256)\n  {\n    if (investorBalances[account].initialBalance == 0) {\n      return (0, 0);\n    }\n    InvestorParam memory investorParam = investorBalances[account];\n    uint96 amountAvailable;\n    if (passedAllVestingPeriods()) {\n      amountAvailable = investorParam.initialBalance;\n    } else if (passedCliff()) {\n      (uint256 vestingPeriod, uint256 elapsed) =\n        _getTrancheInfo(investorParam.investorType);\n      amountAvailable = _proportionAvailable(\n        elapsed,\n        vestingPeriod,\n        investorParam\n      );\n    } else {\n      amountAvailable = 0;\n    }\n    return (investorParam.initialBalance, amountAvailable);\n  }\n\n  function _getTrancheInfo(IOndo.InvestorType investorType)\n    internal\n    view\n    returns (uint256 vestingPeriod, uint256 elapsed)\n  {\n    elapsed = block.timestamp - cliffTimestamp;\n    if (investorType == IOndo.InvestorType.CoinlistTranche1) {\n      elapsed = elapsed > tranche1VestingPeriod\n        ? tranche1VestingPeriod\n        : elapsed;\n      vestingPeriod = tranche1VestingPeriod;\n    } else if (investorType == IOndo.InvestorType.CoinlistTranche2) {\n      elapsed = elapsed > tranche2VestingPeriod\n        ? tranche2VestingPeriod\n        : elapsed;\n      vestingPeriod = tranche2VestingPeriod;\n    } else if (investorType == IOndo.InvestorType.SeedTranche) {\n      elapsed = elapsed > seedVestingPeriod ? seedVestingPeriod : elapsed;\n      vestingPeriod = seedVestingPeriod;\n    }\n  }\n\n  function _proportionAvailable(\n    uint256 elapsed,\n    uint256 vestingPeriod,\n    InvestorParam memory investorParam\n  ) internal pure returns (uint96) {\n    if (investorParam.investorType == IOndo.InvestorType.SeedTranche) {\n      // Seed/Series A Tranche Balance = proportionAvail*2/3 + x/3, where x = Balance. This allows 1/3 of the series A balance to be unlocked at cliff\n      uint96 vestedAmount =\n        safe96(\n          (((investorParam.initialBalance * elapsed) / vestingPeriod) * 2) / 3,\n          \"Ondo::_proportionAvailable: amount exceeds 96 bits\"\n        );\n      return\n        add96(\n          vestedAmount,\n          investorParam.initialBalance / 3,\n          \"Ondo::_proportionAvailable: overflow\"\n        );\n    } else {\n      return\n        safe96(\n          (investorParam.initialBalance * elapsed) / vestingPeriod,\n          \"Ondo::_proportionAvailable: amount exceeds 96 bits\"\n        );\n    }\n  }\n\n  function safe32(uint256 n, string memory errorMessage)\n    internal\n    pure\n    returns (uint32)\n  {\n    require(n < 2**32, errorMessage);\n    return uint32(n);\n  }\n\n  function safe96(uint256 n, string memory errorMessage)\n    internal\n    pure\n    returns (uint96)\n  {\n    require(n < 2**96, errorMessage);\n    return uint96(n);\n  }\n\n  function add96(\n    uint96 a,\n    uint96 b,\n    string memory errorMessage\n  ) internal pure returns (uint96) {\n    uint96 c = a + b;\n    require(c >= a, errorMessage);\n    return c;\n  }\n\n  function sub96(\n    uint96 a,\n    uint96 b,\n    string memory errorMessage\n  ) internal pure returns (uint96) {\n    require(b <= a, errorMessage);\n    return a - b;\n  }\n}\n\ncontract Ondo is AccessControl, LinearTimelock {\n  /// @notice EIP-20 token name for this token\n  string public constant name = \"Ondo\";\n\n  /// @notice EIP-20 token symbol for this token\n  string public constant symbol = \"ONDO\";\n\n  /// @notice EIP-20 token decimals for this token\n  uint8 public constant decimals = 18;\n\n  // whether token transfers are allowed\n  bool public transferAllowed; // false by default\n\n  /// @notice Total number of tokens in circulation\n  uint256 public totalSupply = 10_000_000_000e18; // 10 billion Ondo\n\n  // Allowance amounts on behalf of others\n  mapping(address => mapping(address => uint96)) internal allowances;\n\n  // Official record of token balances for each account\n  mapping(address => uint96) internal balances;\n\n  /// @notice A record of each accounts delegate\n  mapping(address => address) public delegates;\n\n  /// @notice A checkpoint for marking number of votes from a given block\n  struct Checkpoint {\n    uint32 fromBlock;\n    uint96 votes;\n  }\n\n  /// @notice A record of votes checkpoints for each account, by index\n  mapping(address => mapping(uint32 => Checkpoint)) public checkpoints;\n\n  /// @notice The number of checkpoints for each account\n  mapping(address => uint32) public numCheckpoints;\n\n  /// @notice The EIP-712 typehash for the contract's domain\n  bytes32 public constant DOMAIN_TYPEHASH =\n    keccak256(\n      \"EIP712Domain(string name,uint256 chainId,address verifyingContract)\"\n    );\n\n  /// @notice The EIP-712 typehash for the delegation struct used by the contract\n  bytes32 public constant DELEGATION_TYPEHASH =\n    keccak256(\"Delegation(address delegatee,uint256 nonce,uint256 expiry)\");\n\n  /// @notice The identifier of the role which allows special transfer privileges.\n  bytes32 public constant TRANSFER_ROLE = keccak256(\"TRANSFER_ROLE\");\n  bytes32 public constant MINTER_ROLE = keccak256(\"MINTER_ROLE\");\n\n  /// @notice A record of states for signing / validating signatures\n  mapping(address => uint256) public nonces;\n\n  /// @notice An event thats emitted when an account changes its delegate\n  event DelegateChanged(\n    address indexed delegator,\n    address indexed fromDelegate,\n    address indexed toDelegate\n  );\n\n  /// @notice An event thats emitted when a delegate account's vote balance changes\n  event DelegateVotesChanged(\n    address indexed delegate,\n    uint256 previousBalance,\n    uint256 newBalance\n  );\n\n  /// @notice The standard EIP-20 transfer event\n  event Transfer(address indexed from, address indexed to, uint256 amount);\n\n  /// @notice The standard EIP-20 approval event\n  event Approval(\n    address indexed owner,\n    address indexed spender,\n    uint256 amount\n  );\n\n  event CliffTimestampUpdate(uint256 newTimestamp);\n\n  /**\n   * @dev Emitted when the transfer is enabled triggered by `account`.\n   */\n  event TransferEnabled(address account);\n\n  /// @notice a modifier which checks if transfers are allowed\n  modifier whenTransferAllowed() {\n    require(\n      transferAllowed || hasRole(TRANSFER_ROLE, msg.sender),\n      \"OndoToken: Transfers not allowed or not right privillege\"\n    );\n    _;\n  }\n\n  /**\n   * @notice Construct a new Ondo token\n   * @param _governance The initial account to grant owner permission and all the tokens\n   */\n  constructor(\n    address _governance,\n    uint256 _cliffTimestamp,\n    uint256 _tranche1VestingPeriod,\n    uint256 _tranche2VestingPeriod,\n    uint256 _seedVestingPeriod\n  )\n    LinearTimelock(\n      _cliffTimestamp,\n      _tranche1VestingPeriod,\n      _tranche2VestingPeriod,\n      _seedVestingPeriod\n    )\n  {\n    balances[_governance] = uint96(totalSupply);\n    _setupRole(DEFAULT_ADMIN_ROLE, _governance);\n    _setupRole(TRANSFER_ROLE, _governance);\n    _setupRole(MINTER_ROLE, _governance);\n    emit Transfer(address(0), _governance, totalSupply);\n  }\n\n  /**\n   * @notice Get the number of tokens `spender` is approved to spend on behalf of `account`\n   * @param account The address of the account holding the funds\n   * @param spender The address of the account spending the funds\n   * @return The number of tokens approved\n   */\n  function allowance(address account, address spender)\n    external\n    view\n    returns (uint256)\n  {\n    return allowances[account][spender];\n  }\n\n  /**\n   * @notice Approve `spender` to transfer up to `amount` from `src`\n   * @dev This will overwrite the approval amount for `spender`\n   *  and is subject to issues noted [here](https://eips.ethereum.org/EIPS/eip-20#approve)\n   * @param spender The address of the account which may transfer tokens\n   * @param rawAmount The number of tokens that are approved (2^256-1 means infinite)\n   * @return Whether or not the approval succeeded\n   */\n  function approve(address spender, uint256 rawAmount) external returns (bool) {\n    uint96 amount;\n    if (rawAmount == type(uint256).max) {\n      amount = type(uint96).max;\n    } else {\n      amount = safe96(rawAmount, \"Ondo::approve: amount exceeds 96 bits\");\n    }\n\n    allowances[msg.sender][spender] = amount;\n\n    emit Approval(msg.sender, spender, amount);\n    return true;\n  }\n\n  /**\n   * @notice Get the number of tokens held by the `account`\n   * @param account The address of the account to get the balance of\n   * @return The number of tokens held\n   */\n  function balanceOf(address account) external view returns (uint256) {\n    return balances[account];\n  }\n\n  /**\n   * @notice Get the total number of UNLOCKED tokens held by the `account`\n   * @param account The address of the account to get the unlocked balance of\n   * @return The number of unlocked tokens held.\n   */\n  function getFreedBalance(address account) external view returns (uint256) {\n    if (investorBalances[account].initialBalance > 0) {\n      return _getFreedBalance(account);\n    } else {\n      return balances[account];\n    }\n  }\n\n  /**\n   * @notice Transfer `amount` tokens from `msg.sender` to `dst`\n   * @param dst The address of the destination account\n   * @param rawAmount The number of tokens to transfer\n   * @return Whether or not the transfer succeeded\n   */\n  function transfer(address dst, uint256 rawAmount) external returns (bool) {\n    uint96 amount = safe96(rawAmount, \"Ondo::transfer: amount exceeds 96 bits\");\n    _transferTokens(msg.sender, dst, amount);\n    return true;\n  }\n\n  /**\n   * @notice Transfer `amount` tokens from `src` to `dst`\n   * @param src The address of the source account\n   * @param dst The address of the destination account\n   * @param rawAmount The number of tokens to transfer\n   * @return Whether or not the transfer succeeded\n   */\n  function transferFrom(\n    address src,\n    address dst,\n    uint256 rawAmount\n  ) external returns (bool) {\n    address spender = msg.sender;\n    uint96 spenderAllowance = allowances[src][spender];\n    uint96 amount = safe96(rawAmount, \"Ondo::approve: amount exceeds 96 bits\");\n\n    if (spender != src && spenderAllowance != type(uint96).max) {\n      uint96 newAllowance =\n        sub96(\n          spenderAllowance,\n          amount,\n          \"Ondo::transferFrom: transfer amount exceeds spender allowance\"\n        );\n      allowances[src][spender] = newAllowance;\n\n      emit Approval(src, spender, newAllowance);\n    }\n\n    _transferTokens(src, dst, amount);\n    return true;\n  }\n\n  /**\n   * @notice Delegate votes from `msg.sender` to `delegatee`\n   * @param delegatee The address to delegate votes to\n   */\n  function delegate(address delegatee) public {\n    return _delegate(msg.sender, delegatee);\n  }\n\n  /**\n   * @notice Delegates votes from signatory to `delegatee`\n   * @param delegatee The address to delegate votes to\n   * @param nonce The contract state required to match the signature\n   * @param expiry The time at which to expire the signature\n   * @param v The recovery byte of the signature\n   * @param r Half of the ECDSA signature pair\n   * @param s Half of the ECDSA signature pair\n   */\n  function delegateBySig(\n    address delegatee,\n    uint256 nonce,\n    uint256 expiry,\n    uint8 v,\n    bytes32 r,\n    bytes32 s\n  ) public {\n    bytes32 domainSeparator =\n      keccak256(\n        abi.encode(\n          DOMAIN_TYPEHASH,\n          keccak256(bytes(name)),\n          getChainId(),\n          address(this)\n        )\n      );\n    bytes32 structHash =\n      keccak256(abi.encode(DELEGATION_TYPEHASH, delegatee, nonce, expiry));\n    bytes32 digest =\n      keccak256(abi.encodePacked(\"\\x19\\x01\", domainSeparator, structHash));\n    address signatory = ecrecover(digest, v, r, s);\n    require(signatory != address(0), \"Ondo::delegateBySig: invalid signature\");\n    require(nonce == nonces[signatory]++, \"Ondo::delegateBySig: invalid nonce\");\n    require(\n      block.timestamp <= expiry,\n      \"Ondo::delegateBySig: signature expired\"\n    );\n    return _delegate(signatory, delegatee);\n  }\n\n  /**\n   * @notice Gets the current votes balance for `account`\n   * @param account The address to get votes balance\n   * @return The number of current votes for `account`\n   */\n  function getCurrentVotes(address account) external view returns (uint96) {\n    uint32 nCheckpoints = numCheckpoints[account];\n    return nCheckpoints > 0 ? checkpoints[account][nCheckpoints - 1].votes : 0;\n  }\n\n  /**\n   * @notice Determine the prior number of votes for an account as of a block number\n   * @dev Block number must be a finalized block or else this function will revert to prevent misinformation.\n   * @param account The address of the account to check\n   * @param blockNumber The block number to get the vote balance at\n   * @return The number of votes the account had as of the given block\n   */\n  function getPriorVotes(address account, uint256 blockNumber)\n    public\n    view\n    returns (uint96)\n  {\n    require(\n      blockNumber < block.number,\n      \"Ondo::getPriorVotes: not yet determined\"\n    );\n\n    uint32 nCheckpoints = numCheckpoints[account];\n    if (nCheckpoints == 0) {\n      return 0;\n    }\n\n    // First check most recent balance\n    if (checkpoints[account][nCheckpoints - 1].fromBlock <= blockNumber) {\n      return checkpoints[account][nCheckpoints - 1].votes;\n    }\n\n    // Next check implicit zero balance\n    if (checkpoints[account][0].fromBlock > blockNumber) {\n      return 0;\n    }\n\n    uint32 lower = 0;\n    uint32 upper = nCheckpoints - 1;\n    while (upper > lower) {\n      uint32 center = upper - (upper - lower) / 2; // ceil, avoiding overflow\n      Checkpoint memory cp = checkpoints[account][center];\n      if (cp.fromBlock == blockNumber) {\n        return cp.votes;\n      } else if (cp.fromBlock < blockNumber) {\n        lower = center;\n      } else {\n        upper = center - 1;\n      }\n    }\n    return checkpoints[account][lower].votes;\n  }\n\n  /**\n   * @notice Create `rawAmount` new tokens and assign them to `account`.\n   * @param account The address to give newly minted tokens to\n   * @param rawAmount Number of new tokens to mint.\n   * @dev Even though total token supply is uint96, we use uint256 for the amount for consistency with other external interfaces.\n   */\n  function mint(address account, uint256 rawAmount) external {\n    require(hasRole(MINTER_ROLE, msg.sender), \"Ondo::mint: not authorized\");\n    require(account != address(0), \"cannot mint to the zero address\");\n\n    uint96 amount = safe96(rawAmount, \"Ondo::mint: amount exceeds 96 bits\");\n    uint96 supply =\n      safe96(totalSupply, \"Ondo::mint: totalSupply exceeds 96 bits\");\n    totalSupply = add96(supply, amount, \"Ondo::mint: token supply overflow\");\n    balances[account] = add96(\n      balances[account],\n      amount,\n      \"Ondo::mint: balance overflow\"\n    );\n\n    emit Transfer(address(0), account, amount);\n  }\n\n  function _delegate(address delegator, address delegatee) internal {\n    address currentDelegate = delegates[delegator];\n    uint96 delegatorBalance = balances[delegator];\n    delegates[delegator] = delegatee;\n\n    emit DelegateChanged(delegator, currentDelegate, delegatee);\n\n    _moveDelegates(currentDelegate, delegatee, delegatorBalance);\n  }\n\n  function _transferTokens(\n    address src,\n    address dst,\n    uint96 amount\n  ) internal whenTransferAllowed {\n    require(\n      src != address(0),\n      \"Ondo::_transferTokens: cannot transfer from the zero address\"\n    );\n    require(\n      dst != address(0),\n      \"Ondo::_transferTokens: cannot transfer to the zero address\"\n    );\n    if (investorBalances[src].initialBalance > 0) {\n      require(\n        amount <= _getFreedBalance(src),\n        \"Ondo::_transferTokens: not enough unlocked balance\"\n      );\n    }\n\n    balances[src] = sub96(\n      balances[src],\n      amount,\n      \"Ondo::_transferTokens: transfer amount exceeds balance\"\n    );\n    balances[dst] = add96(\n      balances[dst],\n      amount,\n      \"Ondo::_transferTokens: transfer amount overflows\"\n    );\n    emit Transfer(src, dst, amount);\n\n    _moveDelegates(delegates[src], delegates[dst], amount);\n  }\n\n  function _moveDelegates(\n    address srcRep,\n    address dstRep,\n    uint96 amount\n  ) internal {\n    if (srcRep != dstRep && amount > 0) {\n      if (srcRep != address(0)) {\n        uint32 srcRepNum = numCheckpoints[srcRep];\n        uint96 srcRepOld =\n          srcRepNum > 0 ? checkpoints[srcRep][srcRepNum - 1].votes : 0;\n        uint96 srcRepNew =\n          sub96(srcRepOld, amount, \"Ondo::_moveVotes: vote amount underflows\");\n        _writeCheckpoint(srcRep, srcRepNum, srcRepOld, srcRepNew);\n      }\n\n      if (dstRep != address(0)) {\n        uint32 dstRepNum = numCheckpoints[dstRep];\n        uint96 dstRepOld =\n          dstRepNum > 0 ? checkpoints[dstRep][dstRepNum - 1].votes : 0;\n        uint96 dstRepNew =\n          add96(dstRepOld, amount, \"Ondo::_moveVotes: vote amount overflows\");\n        _writeCheckpoint(dstRep, dstRepNum, dstRepOld, dstRepNew);\n      }\n    }\n  }\n\n  function _writeCheckpoint(\n    address delegatee,\n    uint32 nCheckpoints,\n    uint96 oldVotes,\n    uint96 newVotes\n  ) internal {\n    uint32 blockNumber =\n      safe32(\n        block.number,\n        \"Ondo::_writeCheckpoint: block number exceeds 32 bits\"\n      );\n\n    if (\n      nCheckpoints > 0 &&\n      checkpoints[delegatee][nCheckpoints - 1].fromBlock == blockNumber\n    ) {\n      checkpoints[delegatee][nCheckpoints - 1].votes = newVotes;\n    } else {\n      checkpoints[delegatee][nCheckpoints] = Checkpoint(blockNumber, newVotes);\n      numCheckpoints[delegatee] = nCheckpoints + 1;\n    }\n\n    emit DelegateVotesChanged(delegatee, oldVotes, newVotes);\n  }\n\n  function getChainId() internal view returns (uint256) {\n    uint256 chainId;\n    assembly {\n      chainId := chainid()\n    }\n    return chainId;\n  }\n\n  /**\n   * @notice Turn on _transferAllowed variable. Transfers are enabled\n   */\n  function enableTransfer() external {\n    require(\n      hasRole(DEFAULT_ADMIN_ROLE, msg.sender),\n      \"Ondo::enableTransfer: not authorized\"\n    );\n    transferAllowed = true;\n    emit TransferEnabled(msg.sender);\n  }\n\n  /**\n   * @notice Called by merkle airdrop contract to initialize locked balances\n   */\n  function updateTrancheBalance(\n    address beneficiary,\n    uint256 rawAmount,\n    IOndo.InvestorType investorType\n  ) external {\n    require(hasRole(TIMELOCK_UPDATE_ROLE, msg.sender));\n    require(rawAmount > 0, \"Ondo::updateTrancheBalance: amount must be > 0\");\n    require(\n      investorBalances[beneficiary].initialBalance == 0,\n      \"Ondo::updateTrancheBalance: already has timelocked Ondo\"\n    ); //Prevents users from being in more than 1 tranche\n\n    uint96 amount =\n      safe96(rawAmount, \"Ondo::updateTrancheBalance: amount exceeds 96 bits\");\n    investorBalances[beneficiary] = InvestorParam(investorType, amount);\n  }\n\n  /**\n   * @notice Internal function the amount of unlocked Ondo for an account that participated in Coinlist/Seed Investments\n   */\n  function _getFreedBalance(address account) internal view returns (uint96) {\n    if (passedAllVestingPeriods()) {\n      //all vesting periods are over, just return the total balance\n      return balances[account];\n    } else {\n      InvestorParam memory investorParam = investorBalances[account];\n      if (passedCliff()) {\n        //we are in between the cliff timestamp and last vesting period\n        (uint256 vestingPeriod, uint256 elapsed) =\n          _getTrancheInfo(investorParam.investorType);\n        uint96 lockedBalance =\n          sub96(\n            investorParam.initialBalance,\n            _proportionAvailable(elapsed, vestingPeriod, investorParam),\n            \"Ondo::getFreedBalance: locked balance underflow\"\n          );\n        return\n          sub96(\n            balances[account],\n            lockedBalance,\n            \"Ondo::getFreedBalance: total freed balance underflow\"\n          );\n      } else {\n        //we have not hit the cliff yet, all investor balance is locked\n        return\n          sub96(\n            balances[account],\n            investorParam.initialBalance,\n            \"Ondo::getFreedBalance: balance underflow\"\n          );\n      }\n    }\n  }\n\n  function updateCliffTimestamp(uint256 newTimestamp) external {\n    require(\n      hasRole(DEFAULT_ADMIN_ROLE, msg.sender),\n      \"Ondo::updateCliffTimestamp: not authorized\"\n    );\n    cliffTimestamp = newTimestamp;\n    emit CliffTimestampUpdate(newTimestamp);\n  }\n}\n"
+// File: contracts/tokens/Ondo.sol
+// SPDX-License-Identifier: AGPL-3.0
+pragma solidity 0.8.3;
+
+/*
+ * @dev Provides information about the current execution context, including the
+ * sender of the transaction and its data. While these are generally available
+ * via msg.sender and msg.data, they should not be accessed in such a direct
+ * manner, since when dealing with meta-transactions the account sending and
+ * paying for execution may not be the actual sender (as far as an application
+ * is concerned).
+ *
+ * This contract is only required for intermediate, library-like contracts.
+ */
+abstract contract Context {
+  function _msgSender() internal view virtual returns (address) {
+    return msg.sender;
+  }
+
+  function _msgData() internal view virtual returns (bytes calldata) {
+    this; // silence state mutability warning without generating bytecode - see https://github.com/ethereum/solidity/issues/2691
+    return msg.data;
+  }
+}
+
+/**
+ * @dev Interface of the ERC165 standard, as defined in the
+ * https://eips.ethereum.org/EIPS/eip-165[EIP].
+ *
+ * Implementers can declare support of contract interfaces, which can then be
+ * queried by others ({ERC165Checker}).
+ *
+ * For an implementation, see {ERC165}.
+ */
+interface IERC165 {
+  /**
+   * @dev Returns true if this contract implements the interface defined by
+   * `interfaceId`. See the corresponding
+   * https://eips.ethereum.org/EIPS/eip-165#how-interfaces-are-identified[EIP section]
+   * to learn more about how these ids are created.
+   *
+   * This function call must use less than 30 000 gas.
+   */
+  function supportsInterface(bytes4 interfaceId) external view returns (bool);
+}
+
+/**
+ * @dev Implementation of the {IERC165} interface.
+ *
+ * Contracts that want to implement ERC165 should inherit from this contract and override {supportsInterface} to check
+ * for the additional interface id that will be supported. For example:
+ *
+ * ```solidity
+ * function supportsInterface(bytes4 interfaceId) public view virtual override returns (bool) {
+ *     return interfaceId == type(MyInterface).interfaceId || super.supportsInterface(interfaceId);
+ * }
+ * ```
+ *
+ * Alternatively, {ERC165Storage} provides an easier to use but more expensive implementation.
+ */
+abstract contract ERC165 is IERC165 {
+  /**
+   * @dev See {IERC165-supportsInterface}.
+   */
+  function supportsInterface(bytes4 interfaceId)
+    public
+    view
+    virtual
+    override
+    returns (bool)
+  {
+    return interfaceId == type(IERC165).interfaceId;
+  }
+}
+
+/**
+ * @dev External interface of AccessControl declared to support ERC165 detection.
+ */
+interface IAccessControl {
+  function hasRole(bytes32 role, address account) external view returns (bool);
+
+  function getRoleAdmin(bytes32 role) external view returns (bytes32);
+
+  function grantRole(bytes32 role, address account) external;
+
+  function revokeRole(bytes32 role, address account) external;
+
+  function renounceRole(bytes32 role, address account) external;
+}
+
+/**
+ * @dev Contract module that allows children to implement role-based access
+ * control mechanisms. This is a lightweight version that doesn't allow enumerating role
+ * members except through off-chain means by accessing the contract event logs. Some
+ * applications may benefit from on-chain enumerability, for those cases see
+ * {AccessControlEnumerable}.
+ *
+ * Roles are referred to by their `bytes32` identifier. These should be exposed
+ * in the external API and be unique. The best way to achieve this is by
+ * using `public constant` hash digests:
+ *
+ * ```
+ * bytes32 public constant MY_ROLE = keccak256("MY_ROLE");
+ * ```
+ *
+ * Roles can be used to represent a set of permissions. To restrict access to a
+ * function call, use {hasRole}:
+ *
+ * ```
+ * function foo() public {
+ *     require(hasRole(MY_ROLE, msg.sender));
+ *     ...
+ * }
+ * ```
+ *
+ * Roles can be granted and revoked dynamically via the {grantRole} and
+ * {revokeRole} functions. Each role has an associated admin role, and only
+ * accounts that have a role's admin role can call {grantRole} and {revokeRole}.
+ *
+ * By default, the admin role for all roles is `DEFAULT_ADMIN_ROLE`, which means
+ * that only accounts with this role will be able to grant or revoke other
+ * roles. More complex role relationships can be created by using
+ * {_setRoleAdmin}.
+ *
+ * WARNING: The `DEFAULT_ADMIN_ROLE` is also its own admin: it has permission to
+ * grant and revoke this role. Extra precautions should be taken to secure
+ * accounts that have been granted it.
+ */
+abstract contract AccessControl is Context, IAccessControl, ERC165 {
+  struct RoleData {
+    mapping(address => bool) members;
+    bytes32 adminRole;
+  }
+
+  mapping(bytes32 => RoleData) private _roles;
+
+  bytes32 public constant DEFAULT_ADMIN_ROLE = 0x00;
+
+  /**
+   * @dev Emitted when `newAdminRole` is set as ``role``'s admin role, replacing `previousAdminRole`
+   *
+   * `DEFAULT_ADMIN_ROLE` is the starting admin for all roles, despite
+   * {RoleAdminChanged} not being emitted signaling this.
+   *
+   * _Available since v3.1._
+   */
+  event RoleAdminChanged(
+    bytes32 indexed role,
+    bytes32 indexed previousAdminRole,
+    bytes32 indexed newAdminRole
+  );
+
+  /**
+   * @dev Emitted when `account` is granted `role`.
+   *
+   * `sender` is the account that originated the contract call, an admin role
+   * bearer except when using {_setupRole}.
+   */
+  event RoleGranted(
+    bytes32 indexed role,
+    address indexed account,
+    address indexed sender
+  );
+
+  /**
+   * @dev Emitted when `account` is revoked `role`.
+   *
+   * `sender` is the account that originated the contract call:
+   *   - if using `revokeRole`, it is the admin role bearer
+   *   - if using `renounceRole`, it is the role bearer (i.e. `account`)
+   */
+  event RoleRevoked(
+    bytes32 indexed role,
+    address indexed account,
+    address indexed sender
+  );
+
+  /**
+   * @dev See {IERC165-supportsInterface}.
+   */
+  function supportsInterface(bytes4 interfaceId)
+    public
+    view
+    virtual
+    override
+    returns (bool)
+  {
+    return
+      interfaceId == type(IAccessControl).interfaceId ||
+      super.supportsInterface(interfaceId);
+  }
+
+  /**
+   * @dev Returns `true` if `account` has been granted `role`.
+   */
+  function hasRole(bytes32 role, address account)
+    public
+    view
+    override
+    returns (bool)
+  {
+    return _roles[role].members[account];
+  }
+
+  /**
+   * @dev Returns the admin role that controls `role`. See {grantRole} and
+   * {revokeRole}.
+   *
+   * To change a role's admin, use {_setRoleAdmin}.
+   */
+  function getRoleAdmin(bytes32 role) public view override returns (bytes32) {
+    return _roles[role].adminRole;
+  }
+
+  /**
+   * @dev Grants `role` to `account`.
+   *
+   * If `account` had not been already granted `role`, emits a {RoleGranted}
+   * event.
+   *
+   * Requirements:
+   *
+   * - the caller must have ``role``'s admin role.
+   */
+  function grantRole(bytes32 role, address account) public virtual override {
+    require(
+      hasRole(getRoleAdmin(role), _msgSender()),
+      "AccessControl: sender must be an admin to grant"
+    );
+
+    _grantRole(role, account);
+  }
+
+  /**
+   * @dev Revokes `role` from `account`.
+   *
+   * If `account` had been granted `role`, emits a {RoleRevoked} event.
+   *
+   * Requirements:
+   *
+   * - the caller must have ``role``'s admin role.
+   */
+  function revokeRole(bytes32 role, address account) public virtual override {
+    require(
+      hasRole(getRoleAdmin(role), _msgSender()),
+      "AccessControl: sender must be an admin to revoke"
+    );
+
+    _revokeRole(role, account);
+  }
+
+  /**
+   * @dev Revokes `role` from the calling account.
+   *
+   * Roles are often managed via {grantRole} and {revokeRole}: this function's
+   * purpose is to provide a mechanism for accounts to lose their privileges
+   * if they are compromised (such as when a trusted device is misplaced).
+   *
+   * If the calling account had been granted `role`, emits a {RoleRevoked}
+   * event.
+   *
+   * Requirements:
+   *
+   * - the caller must be `account`.
+   */
+  function renounceRole(bytes32 role, address account) public virtual override {
+    require(
+      account == _msgSender(),
+      "AccessControl: can only renounce roles for self"
+    );
+
+    _revokeRole(role, account);
+  }
+
+  /**
+   * @dev Grants `role` to `account`.
+   *
+   * If `account` had not been already granted `role`, emits a {RoleGranted}
+   * event. Note that unlike {grantRole}, this function doesn't perform any
+   * checks on the calling account.
+   *
+   * [WARNING]
+   * ====
+   * This function should only be called from the constructor when setting
+   * up the initial roles for the system.
+   *
+   * Using this function in any other way is effectively circumventing the admin
+   * system imposed by {AccessControl}.
+   * ====
+   */
+  function _setupRole(bytes32 role, address account) internal virtual {
+    _grantRole(role, account);
+  }
+
+  /**
+   * @dev Sets `adminRole` as ``role``'s admin role.
+   *
+   * Emits a {RoleAdminChanged} event.
+   */
+  function _setRoleAdmin(bytes32 role, bytes32 adminRole) internal virtual {
+    emit RoleAdminChanged(role, getRoleAdmin(role), adminRole);
+    _roles[role].adminRole = adminRole;
+  }
+
+  function _grantRole(bytes32 role, address account) private {
+    if (!hasRole(role, account)) {
+      _roles[role].members[account] = true;
+      emit RoleGranted(role, account, _msgSender());
     }
   }
-}}
+
+  function _revokeRole(bytes32 role, address account) private {
+    if (hasRole(role, account)) {
+      _roles[role].members[account] = false;
+      emit RoleRevoked(role, account, _msgSender());
+    }
+  }
+}
+
+interface IOndo {
+  enum InvestorType {CoinlistTranche1, CoinlistTranche2, SeedTranche}
+
+  // ----------- State changing api -----------
+
+  /// @notice Called by timelock contract to initialize locked balance of coinlist/seed investor
+  function updateTrancheBalance(
+    address beneficiary,
+    uint256 rawAmount,
+    InvestorType tranche
+  ) external;
+
+  // ----------- Getters -----------
+
+  /// @notice Gets the TOTAL amount of Ondo available for an address
+  function getFreedBalance(address account) external view returns (uint96);
+
+  /// @notice Gets the initial locked balance and unlocked Ondo for an address
+  function getVestedBalance(address account)
+    external
+    view
+    returns (uint96, uint96);
+}
+
+abstract contract LinearTimelock {
+  struct InvestorParam {
+    IOndo.InvestorType investorType;
+    uint96 initialBalance;
+  }
+
+  /// @notice the timestamp at which releasing is allowed
+  uint256 public cliffTimestamp;
+  /// @notice the linear vesting period for the first tranche
+  uint256 public immutable tranche1VestingPeriod;
+  /// @notice the linear vesting period for the second tranche
+  uint256 public immutable tranche2VestingPeriod;
+  /// @notice the linear vesting period for the Seed/Series A Tranche
+  uint256 public immutable seedVestingPeriod;
+  /// @dev mapping of balances for each investor
+  mapping(address => InvestorParam) internal investorBalances;
+  /// @notice role that allows updating of tranche balances - granted to Merkle airdrop contract
+  bytes32 public constant TIMELOCK_UPDATE_ROLE =
+    keccak256("TIMELOCK_UPDATE_ROLE");
+
+  constructor(
+    uint256 _cliffTimestamp,
+    uint256 _tranche1VestingPeriod,
+    uint256 _tranche2VestingPeriod,
+    uint256 _seedVestingPeriod
+  ) {
+    cliffTimestamp = _cliffTimestamp;
+    tranche1VestingPeriod = _tranche1VestingPeriod;
+    tranche2VestingPeriod = _tranche2VestingPeriod;
+    seedVestingPeriod = _seedVestingPeriod;
+  }
+
+  function passedCliff() public view returns (bool) {
+    return block.timestamp > cliffTimestamp;
+  }
+
+  /// @dev the seedVestingPeriod is the longest vesting period
+  function passedAllVestingPeriods() public view returns (bool) {
+    return block.timestamp > cliffTimestamp + seedVestingPeriod;
+  }
+
+  /**
+    @notice View function to get the user's initial balance and current amount of freed balance
+   */
+  function getVestedBalance(address account)
+    external
+    view
+    returns (uint256, uint256)
+  {
+    if (investorBalances[account].initialBalance == 0) {
+      return (0, 0);
+    }
+    InvestorParam memory investorParam = investorBalances[account];
+    uint96 amountAvailable;
+    if (passedAllVestingPeriods()) {
+      amountAvailable = investorParam.initialBalance;
+    } else if (passedCliff()) {
+      (uint256 vestingPeriod, uint256 elapsed) =
+        _getTrancheInfo(investorParam.investorType);
+      amountAvailable = _proportionAvailable(
+        elapsed,
+        vestingPeriod,
+        investorParam
+      );
+    } else {
+      amountAvailable = 0;
+    }
+    return (investorParam.initialBalance, amountAvailable);
+  }
+
+  function _getTrancheInfo(IOndo.InvestorType investorType)
+    internal
+    view
+    returns (uint256 vestingPeriod, uint256 elapsed)
+  {
+    elapsed = block.timestamp - cliffTimestamp;
+    if (investorType == IOndo.InvestorType.CoinlistTranche1) {
+      elapsed = elapsed > tranche1VestingPeriod
+        ? tranche1VestingPeriod
+        : elapsed;
+      vestingPeriod = tranche1VestingPeriod;
+    } else if (investorType == IOndo.InvestorType.CoinlistTranche2) {
+      elapsed = elapsed > tranche2VestingPeriod
+        ? tranche2VestingPeriod
+        : elapsed;
+      vestingPeriod = tranche2VestingPeriod;
+    } else if (investorType == IOndo.InvestorType.SeedTranche) {
+      elapsed = elapsed > seedVestingPeriod ? seedVestingPeriod : elapsed;
+      vestingPeriod = seedVestingPeriod;
+    }
+  }
+
+  function _proportionAvailable(
+    uint256 elapsed,
+    uint256 vestingPeriod,
+    InvestorParam memory investorParam
+  ) internal pure returns (uint96) {
+    if (investorParam.investorType == IOndo.InvestorType.SeedTranche) {
+      // Seed/Series A Tranche Balance = proportionAvail*2/3 + x/3, where x = Balance. This allows 1/3 of the series A balance to be unlocked at cliff
+      uint96 vestedAmount =
+        safe96(
+          (((investorParam.initialBalance * elapsed) / vestingPeriod) * 2) / 3,
+          "Ondo::_proportionAvailable: amount exceeds 96 bits"
+        );
+      return
+        add96(
+          vestedAmount,
+          investorParam.initialBalance / 3,
+          "Ondo::_proportionAvailable: overflow"
+        );
+    } else {
+      return
+        safe96(
+          (investorParam.initialBalance * elapsed) / vestingPeriod,
+          "Ondo::_proportionAvailable: amount exceeds 96 bits"
+        );
+    }
+  }
+
+  function safe32(uint256 n, string memory errorMessage)
+    internal
+    pure
+    returns (uint32)
+  {
+    require(n < 2**32, errorMessage);
+    return uint32(n);
+  }
+
+  function safe96(uint256 n, string memory errorMessage)
+    internal
+    pure
+    returns (uint96)
+  {
+    require(n < 2**96, errorMessage);
+    return uint96(n);
+  }
+
+  function add96(
+    uint96 a,
+    uint96 b,
+    string memory errorMessage
+  ) internal pure returns (uint96) {
+    uint96 c = a + b;
+    require(c >= a, errorMessage);
+    return c;
+  }
+
+  function sub96(
+    uint96 a,
+    uint96 b,
+    string memory errorMessage
+  ) internal pure returns (uint96) {
+    require(b <= a, errorMessage);
+    return a - b;
+  }
+}
+
+contract Ondo is AccessControl, LinearTimelock {
+  /// @notice EIP-20 token name for this token
+  string public constant name = "Ondo";
+
+  /// @notice EIP-20 token symbol for this token
+  string public constant symbol = "ONDO";
+
+  /// @notice EIP-20 token decimals for this token
+  uint8 public constant decimals = 18;
+
+  // whether token transfers are allowed
+  bool public transferAllowed; // false by default
+
+  /// @notice Total number of tokens in circulation
+  uint256 public totalSupply = 10_000_000_000e18; // 10 billion Ondo
+
+  // Allowance amounts on behalf of others
+  mapping(address => mapping(address => uint96)) internal allowances;
+
+  // Official record of token balances for each account
+  mapping(address => uint96) internal balances;
+
+  /// @notice A record of each accounts delegate
+  mapping(address => address) public delegates;
+
+  /// @notice A checkpoint for marking number of votes from a given block
+  struct Checkpoint {
+    uint32 fromBlock;
+    uint96 votes;
+  }
+
+  /// @notice A record of votes checkpoints for each account, by index
+  mapping(address => mapping(uint32 => Checkpoint)) public checkpoints;
+
+  /// @notice The number of checkpoints for each account
+  mapping(address => uint32) public numCheckpoints;
+
+  /// @notice The EIP-712 typehash for the contract's domain
+  bytes32 public constant DOMAIN_TYPEHASH =
+    keccak256(
+      "EIP712Domain(string name,uint256 chainId,address verifyingContract)"
+    );
+
+  /// @notice The EIP-712 typehash for the delegation struct used by the contract
+  bytes32 public constant DELEGATION_TYPEHASH =
+    keccak256("Delegation(address delegatee,uint256 nonce,uint256 expiry)");
+
+  /// @notice The identifier of the role which allows special transfer privileges.
+  bytes32 public constant TRANSFER_ROLE = keccak256("TRANSFER_ROLE");
+  bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
+
+  /// @notice A record of states for signing / validating signatures
+  mapping(address => uint256) public nonces;
+
+  /// @notice An event thats emitted when an account changes its delegate
+  event DelegateChanged(
+    address indexed delegator,
+    address indexed fromDelegate,
+    address indexed toDelegate
+  );
+
+  /// @notice An event thats emitted when a delegate account's vote balance changes
+  event DelegateVotesChanged(
+    address indexed delegate,
+    uint256 previousBalance,
+    uint256 newBalance
+  );
+
+  /// @notice The standard EIP-20 transfer event
+  event Transfer(address indexed from, address indexed to, uint256 amount);
+
+  /// @notice The standard EIP-20 approval event
+  event Approval(
+    address indexed owner,
+    address indexed spender,
+    uint256 amount
+  );
+
+  event CliffTimestampUpdate(uint256 newTimestamp);
+
+  /**
+   * @dev Emitted when the transfer is enabled triggered by `account`.
+   */
+  event TransferEnabled(address account);
+
+  /// @notice a modifier which checks if transfers are allowed
+  modifier whenTransferAllowed() {
+    require(
+      transferAllowed || hasRole(TRANSFER_ROLE, msg.sender),
+      "OndoToken: Transfers not allowed or not right privillege"
+    );
+    _;
+  }
+
+  /**
+   * @notice Construct a new Ondo token
+   * @param _governance The initial account to grant owner permission and all the tokens
+   */
+  constructor(
+    address _governance,
+    uint256 _cliffTimestamp,
+    uint256 _tranche1VestingPeriod,
+    uint256 _tranche2VestingPeriod,
+    uint256 _seedVestingPeriod
+  )
+    LinearTimelock(
+      _cliffTimestamp,
+      _tranche1VestingPeriod,
+      _tranche2VestingPeriod,
+      _seedVestingPeriod
+    )
+  {
+    balances[_governance] = uint96(totalSupply);
+    _setupRole(DEFAULT_ADMIN_ROLE, _governance);
+    _setupRole(TRANSFER_ROLE, _governance);
+    _setupRole(MINTER_ROLE, _governance);
+    emit Transfer(address(0), _governance, totalSupply);
+  }
+
+  /**
+   * @notice Get the number of tokens `spender` is approved to spend on behalf of `account`
+   * @param account The address of the account holding the funds
+   * @param spender The address of the account spending the funds
+   * @return The number of tokens approved
+   */
+  function allowance(address account, address spender)
+    external
+    view
+    returns (uint256)
+  {
+    return allowances[account][spender];
+  }
+
+  /**
+   * @notice Approve `spender` to transfer up to `amount` from `src`
+   * @dev This will overwrite the approval amount for `spender`
+   *  and is subject to issues noted [here](https://eips.ethereum.org/EIPS/eip-20#approve)
+   * @param spender The address of the account which may transfer tokens
+   * @param rawAmount The number of tokens that are approved (2^256-1 means infinite)
+   * @return Whether or not the approval succeeded
+   */
+  function approve(address spender, uint256 rawAmount) external returns (bool) {
+    uint96 amount;
+    if (rawAmount == type(uint256).max) {
+      amount = type(uint96).max;
+    } else {
+      amount = safe96(rawAmount, "Ondo::approve: amount exceeds 96 bits");
+    }
+
+    allowances[msg.sender][spender] = amount;
+
+    emit Approval(msg.sender, spender, amount);
+    return true;
+  }
+
+  /**
+   * @notice Get the number of tokens held by the `account`
+   * @param account The address of the account to get the balance of
+   * @return The number of tokens held
+   */
+  function balanceOf(address account) external view returns (uint256) {
+    return balances[account];
+  }
+
+  /**
+   * @notice Get the total number of UNLOCKED tokens held by the `account`
+   * @param account The address of the account to get the unlocked balance of
+   * @return The number of unlocked tokens held.
+   */
+  function getFreedBalance(address account) external view returns (uint256) {
+    if (investorBalances[account].initialBalance > 0) {
+      return _getFreedBalance(account);
+    } else {
+      return balances[account];
+    }
+  }
+
+  /**
+   * @notice Transfer `amount` tokens from `msg.sender` to `dst`
+   * @param dst The address of the destination account
+   * @param rawAmount The number of tokens to transfer
+   * @return Whether or not the transfer succeeded
+   */
+  function transfer(address dst, uint256 rawAmount) external returns (bool) {
+    uint96 amount = safe96(rawAmount, "Ondo::transfer: amount exceeds 96 bits");
+    _transferTokens(msg.sender, dst, amount);
+    return true;
+  }
+
+  /**
+   * @notice Transfer `amount` tokens from `src` to `dst`
+   * @param src The address of the source account
+   * @param dst The address of the destination account
+   * @param rawAmount The number of tokens to transfer
+   * @return Whether or not the transfer succeeded
+   */
+  function transferFrom(
+    address src,
+    address dst,
+    uint256 rawAmount
+  ) external returns (bool) {
+    address spender = msg.sender;
+    uint96 spenderAllowance = allowances[src][spender];
+    uint96 amount = safe96(rawAmount, "Ondo::approve: amount exceeds 96 bits");
+
+    if (spender != src && spenderAllowance != type(uint96).max) {
+      uint96 newAllowance =
+        sub96(
+          spenderAllowance,
+          amount,
+          "Ondo::transferFrom: transfer amount exceeds spender allowance"
+        );
+      allowances[src][spender] = newAllowance;
+
+      emit Approval(src, spender, newAllowance);
+    }
+
+    _transferTokens(src, dst, amount);
+    return true;
+  }
+
+  /**
+   * @notice Delegate votes from `msg.sender` to `delegatee`
+   * @param delegatee The address to delegate votes to
+   */
+  function delegate(address delegatee) public {
+    return _delegate(msg.sender, delegatee);
+  }
+
+  /**
+   * @notice Delegates votes from signatory to `delegatee`
+   * @param delegatee The address to delegate votes to
+   * @param nonce The contract state required to match the signature
+   * @param expiry The time at which to expire the signature
+   * @param v The recovery byte of the signature
+   * @param r Half of the ECDSA signature pair
+   * @param s Half of the ECDSA signature pair
+   */
+  function delegateBySig(
+    address delegatee,
+    uint256 nonce,
+    uint256 expiry,
+    uint8 v,
+    bytes32 r,
+    bytes32 s
+  ) public {
+    bytes32 domainSeparator =
+      keccak256(
+        abi.encode(
+          DOMAIN_TYPEHASH,
+          keccak256(bytes(name)),
+          getChainId(),
+          address(this)
+        )
+      );
+    bytes32 structHash =
+      keccak256(abi.encode(DELEGATION_TYPEHASH, delegatee, nonce, expiry));
+    bytes32 digest =
+      keccak256(abi.encodePacked("\x19\x01", domainSeparator, structHash));
+    address signatory = ecrecover(digest, v, r, s);
+    require(signatory != address(0), "Ondo::delegateBySig: invalid signature");
+    require(nonce == nonces[signatory]++, "Ondo::delegateBySig: invalid nonce");
+    require(
+      block.timestamp <= expiry,
+      "Ondo::delegateBySig: signature expired"
+    );
+    return _delegate(signatory, delegatee);
+  }
+
+  /**
+   * @notice Gets the current votes balance for `account`
+   * @param account The address to get votes balance
+   * @return The number of current votes for `account`
+   */
+  function getCurrentVotes(address account) external view returns (uint96) {
+    uint32 nCheckpoints = numCheckpoints[account];
+    return nCheckpoints > 0 ? checkpoints[account][nCheckpoints - 1].votes : 0;
+  }
+
+  /**
+   * @notice Determine the prior number of votes for an account as of a block number
+   * @dev Block number must be a finalized block or else this function will revert to prevent misinformation.
+   * @param account The address of the account to check
+   * @param blockNumber The block number to get the vote balance at
+   * @return The number of votes the account had as of the given block
+   */
+  function getPriorVotes(address account, uint256 blockNumber)
+    public
+    view
+    returns (uint96)
+  {
+    require(
+      blockNumber < block.number,
+      "Ondo::getPriorVotes: not yet determined"
+    );
+
+    uint32 nCheckpoints = numCheckpoints[account];
+    if (nCheckpoints == 0) {
+      return 0;
+    }
+
+    // First check most recent balance
+    if (checkpoints[account][nCheckpoints - 1].fromBlock <= blockNumber) {
+      return checkpoints[account][nCheckpoints - 1].votes;
+    }
+
+    // Next check implicit zero balance
+    if (checkpoints[account][0].fromBlock > blockNumber) {
+      return 0;
+    }
+
+    uint32 lower = 0;
+    uint32 upper = nCheckpoints - 1;
+    while (upper > lower) {
+      uint32 center = upper - (upper - lower) / 2; // ceil, avoiding overflow
+      Checkpoint memory cp = checkpoints[account][center];
+      if (cp.fromBlock == blockNumber) {
+        return cp.votes;
+      } else if (cp.fromBlock < blockNumber) {
+        lower = center;
+      } else {
+        upper = center - 1;
+      }
+    }
+    return checkpoints[account][lower].votes;
+  }
+
+  /**
+   * @notice Create `rawAmount` new tokens and assign them to `account`.
+   * @param account The address to give newly minted tokens to
+   * @param rawAmount Number of new tokens to mint.
+   * @dev Even though total token supply is uint96, we use uint256 for the amount for consistency with other external interfaces.
+   */
+  function mint(address account, uint256 rawAmount) external {
+    require(hasRole(MINTER_ROLE, msg.sender), "Ondo::mint: not authorized");
+    require(account != address(0), "cannot mint to the zero address");
+
+    uint96 amount = safe96(rawAmount, "Ondo::mint: amount exceeds 96 bits");
+    uint96 supply =
+      safe96(totalSupply, "Ondo::mint: totalSupply exceeds 96 bits");
+    totalSupply = add96(supply, amount, "Ondo::mint: token supply overflow");
+    balances[account] = add96(
+      balances[account],
+      amount,
+      "Ondo::mint: balance overflow"
+    );
+
+    emit Transfer(address(0), account, amount);
+  }
+
+  function _delegate(address delegator, address delegatee) internal {
+    address currentDelegate = delegates[delegator];
+    uint96 delegatorBalance = balances[delegator];
+    delegates[delegator] = delegatee;
+
+    emit DelegateChanged(delegator, currentDelegate, delegatee);
+
+    _moveDelegates(currentDelegate, delegatee, delegatorBalance);
+  }
+
+  function _transferTokens(
+    address src,
+    address dst,
+    uint96 amount
+  ) internal whenTransferAllowed {
+    require(
+      src != address(0),
+      "Ondo::_transferTokens: cannot transfer from the zero address"
+    );
+    require(
+      dst != address(0),
+      "Ondo::_transferTokens: cannot transfer to the zero address"
+    );
+    if (investorBalances[src].initialBalance > 0) {
+      require(
+        amount <= _getFreedBalance(src),
+        "Ondo::_transferTokens: not enough unlocked balance"
+      );
+    }
+
+    balances[src] = sub96(
+      balances[src],
+      amount,
+      "Ondo::_transferTokens: transfer amount exceeds balance"
+    );
+    balances[dst] = add96(
+      balances[dst],
+      amount,
+      "Ondo::_transferTokens: transfer amount overflows"
+    );
+    emit Transfer(src, dst, amount);
+
+    _moveDelegates(delegates[src], delegates[dst], amount);
+  }
+
+  function _moveDelegates(
+    address srcRep,
+    address dstRep,
+    uint96 amount
+  ) internal {
+    if (srcRep != dstRep && amount > 0) {
+      if (srcRep != address(0)) {
+        uint32 srcRepNum = numCheckpoints[srcRep];
+        uint96 srcRepOld =
+          srcRepNum > 0 ? checkpoints[srcRep][srcRepNum - 1].votes : 0;
+        uint96 srcRepNew =
+          sub96(srcRepOld, amount, "Ondo::_moveVotes: vote amount underflows");
+        _writeCheckpoint(srcRep, srcRepNum, srcRepOld, srcRepNew);
+      }
+
+      if (dstRep != address(0)) {
+        uint32 dstRepNum = numCheckpoints[dstRep];
+        uint96 dstRepOld =
+          dstRepNum > 0 ? checkpoints[dstRep][dstRepNum - 1].votes : 0;
+        uint96 dstRepNew =
+          add96(dstRepOld, amount, "Ondo::_moveVotes: vote amount overflows");
+        _writeCheckpoint(dstRep, dstRepNum, dstRepOld, dstRepNew);
+      }
+    }
+  }
+
+  function _writeCheckpoint(
+    address delegatee,
+    uint32 nCheckpoints,
+    uint96 oldVotes,
+    uint96 newVotes
+  ) internal {
+    uint32 blockNumber =
+      safe32(
+        block.number,
+        "Ondo::_writeCheckpoint: block number exceeds 32 bits"
+      );
+
+    if (
+      nCheckpoints > 0 &&
+      checkpoints[delegatee][nCheckpoints - 1].fromBlock == blockNumber
+    ) {
+      checkpoints[delegatee][nCheckpoints - 1].votes = newVotes;
+    } else {
+      checkpoints[delegatee][nCheckpoints] = Checkpoint(blockNumber, newVotes);
+      numCheckpoints[delegatee] = nCheckpoints + 1;
+    }
+
+    emit DelegateVotesChanged(delegatee, oldVotes, newVotes);
+  }
+
+  function getChainId() internal view returns (uint256) {
+    uint256 chainId;
+    assembly {
+      chainId := chainid()
+    }
+    return chainId;
+  }
+
+  /**
+   * @notice Turn on _transferAllowed variable. Transfers are enabled
+   */
+  function enableTransfer() external {
+    require(
+      hasRole(DEFAULT_ADMIN_ROLE, msg.sender),
+      "Ondo::enableTransfer: not authorized"
+    );
+    transferAllowed = true;
+    emit TransferEnabled(msg.sender);
+  }
+
+  /**
+   * @notice Called by merkle airdrop contract to initialize locked balances
+   */
+  function updateTrancheBalance(
+    address beneficiary,
+    uint256 rawAmount,
+    IOndo.InvestorType investorType
+  ) external {
+    require(hasRole(TIMELOCK_UPDATE_ROLE, msg.sender));
+    require(rawAmount > 0, "Ondo::updateTrancheBalance: amount must be > 0");
+    require(
+      investorBalances[beneficiary].initialBalance == 0,
+      "Ondo::updateTrancheBalance: already has timelocked Ondo"
+    ); //Prevents users from being in more than 1 tranche
+
+    uint96 amount =
+      safe96(rawAmount, "Ondo::updateTrancheBalance: amount exceeds 96 bits");
+    investorBalances[beneficiary] = InvestorParam(investorType, amount);
+  }
+
+  /**
+   * @notice Internal function the amount of unlocked Ondo for an account that participated in Coinlist/Seed Investments
+   */
+  function _getFreedBalance(address account) internal view returns (uint96) {
+    if (passedAllVestingPeriods()) {
+      //all vesting periods are over, just return the total balance
+      return balances[account];
+    } else {
+      InvestorParam memory investorParam = investorBalances[account];
+      if (passedCliff()) {
+        //we are in between the cliff timestamp and last vesting period
+        (uint256 vestingPeriod, uint256 elapsed) =
+          _getTrancheInfo(investorParam.investorType);
+        uint96 lockedBalance =
+          sub96(
+            investorParam.initialBalance,
+            _proportionAvailable(elapsed, vestingPeriod, investorParam),
+            "Ondo::getFreedBalance: locked balance underflow"
+          );
+        return
+          sub96(
+            balances[account],
+            lockedBalance,
+            "Ondo::getFreedBalance: total freed balance underflow"
+          );
+      } else {
+        //we have not hit the cliff yet, all investor balance is locked
+        return
+          sub96(
+            balances[account],
+            investorParam.initialBalance,
+            "Ondo::getFreedBalance: balance underflow"
+          );
+      }
+    }
+  }
+
+  function updateCliffTimestamp(uint256 newTimestamp) external {
+    require(
+      hasRole(DEFAULT_ADMIN_ROLE, msg.sender),
+      "Ondo::updateCliffTimestamp: not authorized"
+    );
+    cliffTimestamp = newTimestamp;
+    emit CliffTimestampUpdate(newTimestamp);
+  }
+}
+
+

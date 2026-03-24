@@ -23,6 +23,12 @@ pip install -r requirements.txt
 
 ## 🚀 项目启动流程
 
+现在官网找到自己的API Key: https://etherscan.io/apidashboard
+
+# 项目 API 配置
+# 请将env.example复制为 .env 并填入真实的密钥
+API_KEY=your_actual_api_key_here
+
 请按照以下顺序在终端运行脚本：
 
 ### 第一步：获取合约地址

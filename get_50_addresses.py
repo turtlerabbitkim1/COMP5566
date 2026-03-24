@@ -1,8 +1,17 @@
 import requests
 import time
-
+import os
+from dotenv import load_dotenv
 # --- 配置区 ---
-API_KEY = '7GXKBNFEIUZ18APJ56BY932EVIVMNK7X2Z'  # 换成你那一长串 258...
+
+# 加载 .env 文件中的环境变量
+load_dotenv()
+
+# 从环境变量中读取 API_KEY
+API_KEY = os.getenv('API_KEY')
+# 加个检查，防止没读到 Key 报错
+if not API_KEY:
+    raise ValueError("未找到 API_KEY，请确保 .env 文件存在且配置正确！")
 TARGET_COUNT = 400       # 我们的目标是 400 个
 ADDRESS_FILE = 'addresses.txt'
 
