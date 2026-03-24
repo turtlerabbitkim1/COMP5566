@@ -1,0 +1,240 @@
+[
+    {
+        "cluster_id": 1,
+        "size": 13,
+        "members": [
+            "ERC1967Proxy_0x423d.sol",
+            "TransparentUpgradeableProxy_0xd72a.sol",
+            "TransparentUpgradeableProxy_0x5aea.sol",
+            "TransparentUpgradeableProxy_0x7623.sol",
+            "TransparentUpgradeableProxy_0xbca3.sol",
+            "TransparentUpgradeableProxy_0xf668.sol",
+            "TransparentUpgradeableProxy_0x1c47.sol",
+            "ERC1967Proxy_0x5c7b.sol",
+            "ERC1967Proxy_0x0d9a.sol",
+            "ERC1967Proxy_0xe343.sol",
+            "TransparentUpgradeableProxy_0xda9c.sol",
+            "TransparentUpgradeableProxy_0x6874.sol",
+            "TransparentUpgradeableProxy_0x2ddd.sol"
+        ]
+    },
+    {
+        "cluster_id": 2,
+        "size": 8,
+        "members": [
+            "TransparentUpgradeableProxy_0x3328.sol",
+            "TransparentUpgradeableProxy_0x3ad8.sol",
+            "ERC1967Proxy_0x3425.sol",
+            "TransparentUpgradeableProxy_0xb507.sol",
+            "TransparentUpgradeableProxy_0xec53.sol",
+            "ERC1967Proxy_0x5f78.sol",
+            "OptimizedTransparentUpgradeableProxy_0xc03f.sol",
+            "OptimizedTransparentUpgradeableProxy_0x1732.sol"
+        ]
+    },
+    {
+        "cluster_id": 3,
+        "size": 7,
+        "members": [
+            "ERC1967Proxy_0x61e2.sol",
+            "StablecoinProxy_0x8292.sol",
+            "EthcoinProxy_0xe957.sol",
+            "ERC1967Proxy_0x699c.sol",
+            "ERC1967Proxy_0x1169.sol",
+            "ERC1967Proxy_0x9ccc.sol",
+            "BeaconProxy_0xe7c2.sol"
+        ]
+    },
+    {
+        "cluster_id": 4,
+        "size": 4,
+        "members": [
+            "TransparentUpgradeableProxy_0x7251.sol",
+            "TransparentUpgradeableProxy_0xd523.sol",
+            "TransparentUpgradeableProxy_0xe735.sol",
+            "ERC1967Proxy_0x9ce8.sol"
+        ]
+    },
+    {
+        "cluster_id": 5,
+        "size": 3,
+        "members": [
+            "Proxy_0x8769.sol",
+            "Proxy_0x6daf.sol",
+            "Proxy_0x6a41.sol"
+        ]
+    },
+    {
+        "cluster_id": 6,
+        "size": 3,
+        "members": [
+            "ERC1967Proxy_0xebf6.sol",
+            "ERC1967Proxy_0x445f.sol",
+            "ERC1967Proxy_0xee7a.sol"
+        ]
+    },
+    {
+        "cluster_id": 7,
+        "size": 3,
+        "members": [
+            "ERC1967Proxy_0xb850.sol",
+            "ERC1967Proxy_0xfaf1.sol",
+            "TransparentUpgradeableProxy_0xda5e.sol"
+        ]
+    },
+    {
+        "cluster_id": 8,
+        "size": 3,
+        "members": [
+            "AdminUpgradeabilityProxy_0x4580.sol",
+            "FiatTokenProxy_0xa0b8.sol",
+            "AdminUpgradeabilityProxy_0x6c3e.sol"
+        ]
+    },
+    {
+        "cluster_id": 9,
+        "size": 3,
+        "members": [
+            "WBTCOFTAdapter_0x0555.sol",
+            "LayerZeroToken_0x6985.sol",
+            "QorpoToken_0x2251.sol"
+        ]
+    },
+    {
+        "cluster_id": 10,
+        "size": 3,
+        "members": [
+            "SaharaToken_0xfdff.sol",
+            "GravityTokenG_0x9c7b.sol",
+            "PeerToken_0x87ac.sol"
+        ]
+    },
+    {
+        "cluster_id": 11,
+        "size": 2,
+        "members": [
+            "InitializableERC20_0x6dde.sol",
+            "InitializableERC20_0x9447.sol"
+        ]
+    },
+    {
+        "cluster_id": 12,
+        "size": 2,
+        "members": [
+            "GnosisSafeProxy_0xb209.sol",
+            "GnosisSafeProxy_0x54a3.sol"
+        ]
+    },
+    {
+        "cluster_id": 13,
+        "size": 2,
+        "members": [
+            "RootChainManagerProxy_0xd060.sol",
+            "RootChainManagerProxy_0xa0c6.sol"
+        ]
+    },
+    {
+        "cluster_id": 14,
+        "size": 2,
+        "members": [
+            "PENDLE_0x8085.sol",
+            "Properties_0x4d13.sol"
+        ]
+    },
+    {
+        "cluster_id": 15,
+        "size": 2,
+        "members": [
+            "DVN_0xc9ca.sol",
+            "DVN_0x3b05.sol"
+        ]
+    },
+    {
+        "cluster_id": 16,
+        "size": 2,
+        "members": [
+            "TokenERC20_0x5d4d.sol",
+            "TokenERC20_0x5529.sol"
+        ]
+    },
+    {
+        "cluster_id": 17,
+        "size": 2,
+        "members": [
+            "ERC1967Proxy_0x604d.sol",
+            "TransparentUpgradeableProxy_0x6c96.sol"
+        ]
+    },
+    {
+        "cluster_id": 18,
+        "size": 2,
+        "members": [
+            "EthgasToken_0x2798.sol",
+            "ChasmAI_0x1924.sol"
+        ]
+    },
+    {
+        "cluster_id": 19,
+        "size": 2,
+        "members": [
+            "Ancient8_0x3e5a.sol",
+            "Turbo_0xa359.sol"
+        ]
+    },
+    {
+        "cluster_id": 20,
+        "size": 2,
+        "members": [
+            "NativeStakingFeeAccumulator2Proxy_0xfee3.sol",
+            "OETHFixedRateDripperProxy_0xe3b3.sol"
+        ]
+    },
+    {
+        "cluster_id": 21,
+        "size": 2,
+        "members": [
+            "FISToken_0xef3a.sol",
+            "FetchToken_0xaea4.sol"
+        ]
+    },
+    {
+        "cluster_id": 22,
+        "size": 2,
+        "members": [
+            "MaticToken_0x7d1a.sol",
+            "chiliZ_0x3506.sol"
+        ]
+    },
+    {
+        "cluster_id": 23,
+        "size": 2,
+        "members": [
+            "RaveToken_0x1720.sol",
+            "ZKPToken_0xe1be.sol"
+        ]
+    },
+    {
+        "cluster_id": 24,
+        "size": 2,
+        "members": [
+            "MemoryPageFactRegistry_0xe583.sol",
+            "Proxy_0x4731.sol"
+        ]
+    },
+    {
+        "cluster_id": 25,
+        "size": 2,
+        "members": [
+            "ERC1967Proxy_0xf4e1.sol",
+            "CustodialWalletFactoryV2_0x5b61.sol"
+        ]
+    },
+    {
+        "cluster_id": 26,
+        "size": 2,
+        "members": [
+            "LEO_0x2af5.sol",
+            "MiniMeToken_0x5a98.sol"
+        ]
+    }
+]
