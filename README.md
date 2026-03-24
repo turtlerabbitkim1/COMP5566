@@ -8,6 +8,7 @@
 
 ```bash
 pip install pandas matplotlib networkx scikit-learn requests beautifulsoup4
+```
 或者 
 ```bash
 pip install -r requirements.txt
