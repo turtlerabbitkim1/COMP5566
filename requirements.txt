@@ -1,0 +1,7 @@
+pandas
+matplotlib
+networkx
+scikit-learn
+requests
+beautifulsoup4
+tqdm

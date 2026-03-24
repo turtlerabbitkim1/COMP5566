@@ -1,6 +1,7 @@
 import pandas as pd
 import networkx as nx
 import os
+import json
 
 def analyze_clusters():
     csv_file = 'fast_clone_report.csv'
@@ -20,7 +21,6 @@ def analyze_clusters():
         G.add_edge(row['Contract A'], row['Contract B'])
 
     # 寻找“家族”（连通子图）
-    # 如果 A 和 B 像，B 和 C 像，那么 A,B,C 就是一个家族
     clusters = list(nx.connected_components(G))
     
     # 按家族里的人数从多到少排序
@@ -40,11 +40,25 @@ def analyze_clusters():
     print(f"生态总体克隆率: {clone_ratio:.2f}%\n")
     
     print(f"这些克隆合约共划分为 {len(clusters)} 个克隆家族：")
+    
+    cluster_data = []
     for i, cluster in enumerate(clusters):
-        print(f"🏠 家族 {i+1} (共包含 {len(cluster)} 个合约):")
-        # 随便挑三个名字打印出来作为代表
-        examples = list(cluster)[:3]
+        cluster_list = list(cluster)
+        print(f"🏠 家族 {i+1} (共包含 {len(cluster_list)} 个合约):")
+        examples = cluster_list[:3]
         print(f"   代表成员: {', '.join([e.split('_')[0] for e in examples])}...")
+        
+        cluster_data.append({
+            "cluster_id": i + 1,
+            "size": len(cluster_list),
+            "members": cluster_list
+        })
+
+    # 将聚类结果导出到 JSON 文件
+    output_json = 'clusters.json'
+    with open(output_json, 'w', encoding='utf-8') as f:
+        json.dump(cluster_data, f, indent=4, ensure_ascii=False)
+    print(f"\n💾 聚类结果已保存至: {output_json}")
 
 if __name__ == "__main__":
     analyze_clusters()
